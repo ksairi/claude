@@ -12,7 +12,6 @@ import { themes } from "@theme";
 import { useCustomFonts } from "@hooks";
 import { LinguiClientProvider } from "@i18n";
 import * as Sentry from "@sentry/react-native";
-import { setupSentry } from "@sentry";
 // Add your Rive splash animation to assets/animations/splash.riv
 import splash from "../assets/animations/splash.riv";
 
@@ -20,9 +19,12 @@ import splash from "../assets/animations/splash.riv";
 // import { StripeProvider } from "@stripe/stripe-react-native";
 // const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
 
-const shouldEnableSentry = !__DEV__;
-
-setupSentry(shouldEnableSentry);
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  environment: process.env.EXPO_PUBLIC_ENV ?? "stg",
+  tracesSampleRate: __DEV__ ? 0 : 0.2,
+  enabled: !__DEV__,
+});
 
 const StyledGestureHandlerRootView = styled(GestureHandlerRootView, {
   flex: 1,
