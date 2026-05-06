@@ -280,33 +280,33 @@ node -e "
   };
 
   add('sync-env-vars',
-    'doppler secrets substitute env.template.yaml --output .env --project mobile --config \${ENV:-stg}');
+    'doppler secrets substitute env.template.yaml --output .env --project mobile --config \$0');
   // doppler run injects FIGMA_API_KEY (Doppler key name); the tool expects FIGMA_TOKEN, so remap inline
   // Skip gracefully when vars are unset (Figma integration is optional)
   add('sync-design-tokens',
-    'doppler run --project mobile --config \${ENV:-stg} -- bash -c \'if [ -z "\${FIGMA_API_KEY:-}" ] || [ -z "\${FIGMA_FILE_ID:-}" ]; then echo "Skipping design token sync (no Figma project configured)"; else FIGMA_TOKEN=\$FIGMA_API_KEY figma-tamagui-sync --fileId=\$FIGMA_FILE_ID --out=./src/theme; fi\'');
+    'doppler run --project mobile --config \$0 -- bash -c \'if [ -z "\${FIGMA_API_KEY:-}" ] || [ -z "\${FIGMA_FILE_ID:-}" ]; then echo "Skipping design token sync (no Figma project configured)"; else FIGMA_TOKEN=\$FIGMA_API_KEY figma-tamagui-sync --fileId=\$FIGMA_FILE_ID --out=./src/theme; fi\'');
   add('pre-start', 'yarn sync-env-vars \$1 && yarn sync-design-tokens \$1 && yarn generate:open-api-hooks');
   add('start:expo',
-    '[ \${ENV:-stg} == \\'prd\\' ] && yarn expo start --scheme ' + slug +
-    ' || yarn expo start --scheme ' + slug + '-\${ENV:-stg}');
-  add('build', 'yarn sync-env-vars \$1 && yarn generate:open-api-hooks');
-  add('pre-build', 'yarn i18n && yarn build \$1');
+    '[ \$0 == \\'prd\\' ] && yarn expo start --scheme ' + slug +
+    ' || yarn expo start --scheme ' + slug + '-\$0');
+  add('build', 'yarn sync-env-vars \$0 && yarn generate:open-api-hooks; \$1');
+  add('pre-build', 'yarn i18n && yarn build \$0 "\$1"');
   add('dev-client-ios',
-    'yarn pre-build \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas build --platform ios --profile development --local');
+    'yarn pre-build \$0 "doppler run --project mobile --config \$0 -- eas build --platform ios --profile development --local"');
   add('dev-client-android',
-    'yarn pre-build \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas build --platform android --profile development --local');
+    'yarn pre-build \$0 "doppler run --project mobile --config \$0 -- eas build --platform android --profile development --local"');
   add('dev-client-ios-device',
-    'yarn pre-build \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas build --platform ios --profile preview --local');
+    'yarn pre-build \$0 "doppler run --project mobile --config \$0 -- eas build --platform ios --profile preview --local"');
   add('build-store-ios',
-    'yarn pre-build \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas build --platform ios --profile prd --local --non-interactive --output ./app-build.ipa');
+    'yarn pre-build \$0 "doppler run --project mobile --config \$0 -- eas build --platform ios --profile prd --local --non-interactive --output ./app-build.ipa"');
   add('build-store-android',
-    'yarn pre-build \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas build --platform android --profile prd --local --non-interactive --output ./app-build.aab');
-  add('build-store-all', 'yarn build-store-android \$1 && yarn build-store-ios \$1');
+    'yarn pre-build \$0 "doppler run --project mobile --config \$0 -- eas build --platform android --profile prd --local --non-interactive --output ./app-build.aab"');
+  add('build-store-all', 'yarn build-store-android \$0 && yarn build-store-ios \$0');
   add('deploy-store-ios',
-    'yarn build-store-ios \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas submit --platform ios --profile \${ENV:-stg} --path ./app-build.ipa');
+    'yarn build-store-ios \$0 && doppler run --project mobile --config \$0 -- eas submit --platform ios --profile \$0 --path ./app-build.ipa');
   add('deploy-store-android',
-    'yarn build-store-android \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas submit --platform android --profile \${ENV:-stg} --path ./app-build.aab');
-  add('deploy-store-all', 'yarn deploy-store-android \$1 && yarn deploy-store-ios \$1');
+    'yarn build-store-android \$0 && doppler run --project mobile --config \$0 -- eas submit --platform android --profile \$0 --path ./app-build.aab');
+  add('deploy-store-all', 'yarn deploy-store-android \$0 && yarn deploy-store-ios \$0');
   add('generate:open-api-spec',
     "bash -c 'mkdir -p node_modules/@ksairi-org/react-query-sdk/specs && EXPO_PUBLIC_SUPABASE_API_KEY=$(grep ^SUPABASE_SERVICE_ROLE_KEY= .env | cut -d= -f2-) node --env-file=.env node_modules/@ksairi-org/react-query-sdk/scripts/generate-open-api-spec.js'");
   add('generate:open-api-hooks',
@@ -341,29 +341,29 @@ node -e "
     changed = true;
   }
 
-  // Ensure sync-env-vars uses --project mobile --config with ${ENV:-stg}
+  // Ensure sync-env-vars uses --project mobile --config with $0
   if (pkg.scripts['sync-env-vars'] && !pkg.scripts['sync-env-vars'].includes('--project')) {
     pkg.scripts['sync-env-vars'] =
-      'doppler secrets substitute env.template.yaml --output .env --project mobile --config \${ENV:-stg}';
-    console.log('   Patched: sync-env-vars now uses --project mobile --config \${ENV:-stg}');
+      'doppler secrets substitute env.template.yaml --output .env --project mobile --config \$0';
+    console.log('   Patched: sync-env-vars now uses --project mobile --config \$0');
     changed = true;
   }
 
   // Migrate ENV var pattern → positional arg pattern (matches virtual-wallet convention)
   const newScripts = {
-    'sync-env-vars': 'doppler secrets substitute env.template.yaml --output .env --project mobile --config \${ENV:-stg}',
-    'sync-design-tokens': 'doppler run --project mobile --config \${ENV:-stg} -- bash -c \'if [ -z "\${FIGMA_API_KEY:-}" ] || [ -z "\${FIGMA_FILE_ID:-}" ]; then echo "Skipping design token sync (no Figma project configured)"; else FIGMA_TOKEN=\$FIGMA_API_KEY figma-tamagui-sync --fileId=\$FIGMA_FILE_ID --out=./src/theme; fi\'',
+    'sync-env-vars': 'doppler secrets substitute env.template.yaml --output .env --project mobile --config \$0',
+    'sync-design-tokens': 'doppler run --project mobile --config \$0 -- bash -c \'if [ -z "\${FIGMA_API_KEY:-}" ] || [ -z "\${FIGMA_FILE_ID:-}" ]; then echo "Skipping design token sync (no Figma project configured)"; else FIGMA_TOKEN=\$FIGMA_API_KEY figma-tamagui-sync --fileId=\$FIGMA_FILE_ID --out=./src/theme; fi\'',
     'pre-start': 'yarn sync-env-vars \$1 && yarn sync-design-tokens \$1 && yarn generate:open-api-hooks',
     'build': 'yarn sync-env-vars \$1 && yarn generate:open-api-hooks',
     'pre-build': 'yarn i18n && yarn build \$1',
-    'dev-client-ios': 'yarn pre-build \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas build --platform ios --profile development --local',
-    'dev-client-android': 'yarn pre-build \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas build --platform android --profile development --local',
-    'dev-client-ios-device': 'yarn pre-build \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas build --platform ios --profile preview --local',
-    'build-store-ios': 'yarn pre-build \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas build --platform ios --profile prd --local --non-interactive --output ./app-build.ipa',
-    'build-store-android': 'yarn pre-build \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas build --platform android --profile prd --local --non-interactive --output ./app-build.aab',
+    'dev-client-ios': 'yarn pre-build \$1 && doppler run --project mobile --config \$0 -- eas build --platform ios --profile development --local',
+    'dev-client-android': 'yarn pre-build \$1 && doppler run --project mobile --config \$0 -- eas build --platform android --profile development --local',
+    'dev-client-ios-device': 'yarn pre-build \$1 && doppler run --project mobile --config \$0 -- eas build --platform ios --profile preview --local',
+    'build-store-ios': 'yarn pre-build \$1 && doppler run --project mobile --config \$0 -- eas build --platform ios --profile prd --local --non-interactive --output ./app-build.ipa',
+    'build-store-android': 'yarn pre-build \$1 && doppler run --project mobile --config \$0 -- eas build --platform android --profile prd --local --non-interactive --output ./app-build.aab',
     'build-store-all': 'yarn build-store-android \$1 && yarn build-store-ios \$1',
-    'deploy-store-ios': 'yarn build-store-ios \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas submit --platform ios --profile \${ENV:-stg} --path ./app-build.ipa',
-    'deploy-store-android': 'yarn build-store-android \$1 && doppler run --project mobile --config \${ENV:-stg} -- eas submit --platform android --profile \${ENV:-stg} --path ./app-build.aab',
+    'deploy-store-ios': 'yarn build-store-ios \$1 && doppler run --project mobile --config \$0 -- eas submit --platform ios --profile \$0 --path ./app-build.ipa',
+    'deploy-store-android': 'yarn build-store-android \$1 && doppler run --project mobile --config \$0 -- eas submit --platform android --profile \$0 --path ./app-build.aab',
     'deploy-store-all': 'yarn deploy-store-android \$1 && yarn deploy-store-ios \$1',
   };
   const legacyArgPattern = /\$\{?[012](?::-[^}]*)?\}?|\"\$[12]\"/;
@@ -384,7 +384,7 @@ node -e "
   if (pkg.scripts['start:expo'] && legacyArgPattern.test(pkg.scripts['start:expo'])) {
     pkg.scripts['start:expo'] = pkg.scripts['start:expo']
       .replace(/\$\{1:-([^}]+)\}/g, '\${ENV:-$1}')
-      .replace(/\$1(?![:-}])/g, '\${ENV:-stg}');
+      .replace(/\$1(?![:-}])/g, '\$0');
     console.log('   Patched: start:expo migrated positional args → ENV var');
     changed = true;
   }
@@ -422,7 +422,7 @@ node -e "
   for (const key of easScripts) {
     const s = pkg.scripts[key];
     if (s && s.includes('eas ') && !s.includes('doppler run')) {
-      pkg.scripts[key] = s.replace(/eas (build|submit)/, 'doppler run --project mobile --config ${ENV:-stg} -- eas $1');
+      pkg.scripts[key] = s.replace(/eas (build|submit)/, 'doppler run --project mobile --config $0 -- eas $1');
       console.log('   Patched: ' + key + ' now runs eas via doppler run');
       changed = true;
     }
