@@ -494,6 +494,10 @@ else
   cat > "$ENV_TEMPLATE" <<'YAML'
 FIGMA_API_KEY={{ .FIGMA_API_KEY }}
 FIGMA_FILE_ID={{ .FIGMA_FILE_ID }}
+# Supabase — stg-first pattern: create stg project first (default), add prod when ready
+# Authentication → URL Configuration redirect URLs:
+#   stg config:  {app-slug}-stg://
+#   prod config: {app-slug}://
 SUPABASE_URL={{ .SUPABASE_URL }}
 SUPABASE_SERVICE_ROLE_KEY={{ .SUPABASE_SERVICE_ROLE_KEY }}
 # Supabase personal access token (account-level, from supabase.com/dashboard/account/tokens)
@@ -910,8 +914,19 @@ else
   echo "  1. Edit CLAUDE.md — fill in: ${REMAINING_FIELDS}"
 fi
 echo "  2. Review mcp.config.json — paths were auto-detected, adjust if needed"
-echo "  3. Add your Rive splash: place assets/splash.riv in the project root"
+echo "  3. Add your Rive splash: place assets/animations/splash.riv in the project root"
 echo "     (app/_layout.tsx already imports it — the app won't bundle without it)"
-echo "  4. Start Claude: claude"
+echo "  4. Supabase setup (stg-first pattern):"
+echo "     a. Create stg project first (default env) — set all env vars, auth providers, schema"
+echo "     b. Supabase → Authentication → URL Configuration:"
+echo "        stg:  ${SLUG}-stg://"
+echo "        prod: ${SLUG}://"
+echo "     c. Social auth (Google/Apple): configure OAuth providers in Supabase Auth → Providers"
+echo "        Google needs: Web Client ID, iOS Client ID, Android Client ID (from Google Cloud)"
+echo "        Apple needs: Service ID + private key (from Apple Developer portal)"
+echo "     d. When ready for prod: create prod Supabase project with same schema/auth config"
+echo "        Use 'yarn start prd' / 'yarn dev-client-android prd' to target prod env"
+echo "  5. Start Claude: claude"
 echo ""
 echo "   Env vars sync automatically on every 'yarn start' via pre-start."
+echo "   Run 'yarn start prd' or 'yarn dev-client-ios prd' to target production."
