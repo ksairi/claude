@@ -233,6 +233,19 @@ In Authentication → URL Configuration, set the redirect URL per env:
 - stg: `{slug}-stg://`
 - prd: `{slug}://`
 
+## Updating existing apps
+
+When the plugin updates, apps built from it don't auto-update. Apply changes manually:
+
+1. **MCP servers** — rebuild if `mcps/*/src/` changed: `cd mcps/expo-mcp-server && yarn build`
+2. **Scripts** — re-run `setup-app.sh` to merge updated `package.json` scripts; review the git diff before committing
+3. **Templates** — compare `templates/` files against your project manually (no auto-merge); key files to check: `app/_layout.tsx`, `app.config.ts`, `.gitignore`, `eas.json`
+4. **tsconfig paths** — add new aliases manually (e.g. `@sentry`, `@fonts`) when adopting new services
+5. **CLAUDE.md** — pull in new "Never do" / "Always do" rules from `templates/CLAUDE.md`
+6. **Skills** — always up to date automatically (loaded fresh each session from the plugin root)
+
+Reference implementation for patterns not covered here: [ksairi-org/virtual-wallet](https://github.com/ksairi-org/virtual-wallet).
+
 ## Project CLAUDE.md
 
 Keep your project's `CLAUDE.md` lean (under 80 lines). Move detailed standards to the on-demand skill:

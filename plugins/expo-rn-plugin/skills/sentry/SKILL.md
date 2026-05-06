@@ -7,9 +7,13 @@ Use the Sentry MCP (`mcp__sentry__*`) to query production errors, releases, and 
 
 ## Setup checklist
 
+- `EXPO_PUBLIC_ENV` in Doppler (`stg` / `prd`) — used as the Sentry environment tag
 - `SENTRY_DSN` in Doppler → `.env` as `EXPO_PUBLIC_SENTRY_DSN`
 - `SENTRY_AUTH_TOKEN` in Doppler (for source map uploads during EAS builds)
 - `SENTRY_ORG` and `SENTRY_PROJECT` set in Doppler and `mcp.config.json`
+- Create `src/services/sentry/index.ts` with `setupSentry(isEnabled)` — keep `_layout.tsx` clean
+- Add `"@sentry": ["src/services/sentry/index.ts"]` to `tsconfig.json` paths
+- One Sentry project per app, two environments (`stg` + `prd`) — not two projects
 
 ## Canonical initialisation
 
