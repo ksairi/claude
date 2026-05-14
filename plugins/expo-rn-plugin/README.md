@@ -60,7 +60,7 @@ claude
 
 Delegate as much as possible to EAS — it handles certificates, provisioning profiles, App Store app creation, and keystore management automatically.
 
-> **i18n compiled catalogs:** add `"postinstall": "yarn i18n:compile"` to `package.json` scripts so EAS compiles catalogs after `yarn install` in its temp build directory. Without this, Metro will fail to resolve `locales/compiled/en` since the compiled output is gitignored.
+> **i18n compiled catalogs:** do NOT gitignore `src/i18n/locales/compiled/`. EAS local builds archive the project via git — gitignored files never reach the build temp directory, causing Metro to fail resolving `locales/compiled/en`. Commit the compiled output. Add `"postinstall": "yarn i18n:compile"` as a safety net for local dev.
 
 ### 1. iOS — App Store Connect API key (do this first)
 
@@ -135,6 +135,34 @@ yarn deploy-store-all:prd-internal
 ```
 
 Fill in `YOUR_STG_ASC_APP_ID` and `YOUR_PRD_ASC_APP_ID` in `eas.json` with the numeric App IDs from App Store Connect → App Information.
+
+## CI / GitHub Actions
+
+The workflow templates (`.github/workflows/`) wire up automatic deploys: push to `stg` → deploy stg builds, push to `main` → deploy prd builds. Manual dispatch also supported.
+
+### Required GitHub secrets
+
+| Secret | Where to get it |
+| --- | --- |
+| `EXPO_TOKEN` | expo.dev → Account Settings → Access Tokens |
+| `DOPPLER_TOKEN` | Doppler → project → Access → Service Tokens |
+| `EXPO_APPLE_ID` | Your Apple ID email |
+| `EXPO_APPLE_APP_SPECIFIC_PASSWORD` | [appleid.apple.com](https://appleid.apple.com) → App-Specific Passwords |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Google Cloud → Service Accounts → JSON key (EAS submit role only) |
+
+> Org-level secrets need **explicit repo access** — go to org Settings → Secrets → grant the repo. A secret set at org level is not automatically inherited by private repos.
+
+### Xcode version
+
+The Expo SDK version dictates the minimum Xcode. Running `expo-doctor` in CI will report the required version. **SDK 55 requires Xcode ≥ 26.0** — using an older Xcode causes Swift incompatibilities in `expo-modules-core` and pre-built XCFrameworks. Set `xcode-version: '26.0'` (or newer) in the iOS workflow.
+
+### i18n compiled catalogs
+
+EAS local builds archive the project via `git`, so gitignored files are excluded from the build temp directory. **Commit `src/i18n/locales/compiled/`** — do not gitignore it. The compiled `.ts` files are small and deterministic; excluding them causes Metro to fail resolving `locales/compiled/en` at bundle time.
+
+### expo-doctor in pre-build
+
+Do NOT include `yarn doctor` in the `pre-build` script. `expo-doctor` runs environment-specific checks (network, tool availability) that fail in CI. Keep it as a standalone `yarn doctor` command for local use only.
 
 ## Install (existing project)
 
