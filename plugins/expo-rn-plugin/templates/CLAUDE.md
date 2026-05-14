@@ -25,7 +25,7 @@
 ## Always do
 
 - Run `tsc --noEmit` after every change — zero errors before done
-- Run `yarn expo install --check` after adding packages — fixes SDK version mismatches before they break builds
+- Run `yarn expo install --check` after adding packages — fixes SDK version mismatches before they break builds; updates `yarn.lock`, so re-test before deploying
 - Run `yarn doctor` before triggering any store build — catches duplicate native modules early
 - Wrap user-visible strings: `<Trans>` in JSX, `` t`…` `` for props (import from `@lingui/react/macro`)
 - Keep files under 500 lines
